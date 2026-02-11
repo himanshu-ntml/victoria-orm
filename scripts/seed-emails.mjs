@@ -14,11 +14,8 @@
 
 import crypto from "node:crypto";
 
-const BASE_URL =
-    process.env.VICTORIA_BASE_URL ||
-    "https://***REDACTED_URL***";
-const TOKEN =
-    process.env.VICTORIA_TOKEN || "***REDACTED***";
+const BASE_URL = process.env.VICTORIA_BASE_URL || "http://localhost:9428";
+const TOKEN = process.env.VICTORIA_TOKEN || "";
 
 function arg(name, fallback) {
     const found = process.argv.find((a) => a.startsWith(`--${name}=`));
@@ -147,7 +144,7 @@ async function sendBatch(lines) {
     const res = await fetch(url.toString(), {
         method: "POST",
         headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            ...(TOKEN && { Authorization: `Bearer ${TOKEN}` }),
             "Content-Type": "application/stream+json",
         },
         body: lines.join("\n"),

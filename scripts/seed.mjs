@@ -8,11 +8,8 @@
  *   node scripts/seed.mjs --count 200
  */
 
-const BASE_URL =
-    process.env.VICTORIA_BASE_URL ||
-    "https://***REDACTED_URL***";
-const TOKEN =
-    process.env.VICTORIA_TOKEN || "***REDACTED***";
+const BASE_URL = process.env.VICTORIA_BASE_URL || "http://localhost:9428";
+const TOKEN = process.env.VICTORIA_TOKEN || "";
 
 const COUNT = parseInt(process.argv.find((a) => a.startsWith("--count="))?.split("=")[1] || "50", 10);
 
@@ -121,7 +118,7 @@ async function seed() {
     const res = await fetch(url.toString(), {
         method: "POST",
         headers: {
-            Authorization: `Bearer ${TOKEN}`,
+            ...(TOKEN && { Authorization: `Bearer ${TOKEN}` }),
             "Content-Type": "application/stream+json",
         },
         body,
