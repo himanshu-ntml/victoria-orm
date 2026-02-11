@@ -13,50 +13,13 @@
  */
 
 import { Hono } from "hono";
-import { victoriaLogs, stream, text, enm, eq } from "victoria-orm";
-import { archiveEmails } from "./archival";
-
-// ── Types ──
-
-type Bindings = {
-    VICTORIA_BASE_URL: string;
-    VICTORIA_TOKEN: string;
-    DB: D1Database;
-};
-
-// ── Schemas ──
-
-const vlEmails = stream("email-archive", {
-    id: text("id"),
-    to: text("to").notNull(),
-    from: text("from").notNull(),
-    subject: text("subject").notNull(),
-    status: enm("status", [
-        "delivered",
-        "bounced",
-        "deferred",
-        "opened",
-        "clicked",
-    ] as const),
-});
-
-const appLogs = stream("stream1", {
-    message: text("log.message"),
-    level: text("log.level"),
-});
+import { archiveEmails } from "@/scheduler/archival";
+import { type Bindings, getVL } from "@/providers/victoria";
+import { vlEmails, appLogs } from "@/providers/victoria/schema";
 
 // ── App ──
 
 const app = new Hono<{ Bindings: Bindings }>();
-
-// Helper: init ORM from worker env
-function getVL(env: Bindings) {
-    return victoriaLogs({
-        url: env.VICTORIA_BASE_URL,
-        token: env.VICTORIA_TOKEN || "",
-        logger: true,
-    });
-}
 
 // Health
 app.get("/", (c) =>
@@ -92,14 +55,9 @@ app.get("/api/logs", async (c) => {
 app.get("/api/emails", async (c) => {
     const vl = getVL(c.env);
     const limit = parseInt(c.req.query("limit") || "50", 10);
-    const status = c.req.query("status");
 
     try {
-        let query = vl.select().from(vlEmails).limit(limit);
-        if (status) {
-            query = query.where(eq(vlEmails.status, status));
-        }
-        const result = await query.execute();
+        const result = await vl.select().from(vlEmails).limit(limit).execute();
         return c.json(result);
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);
@@ -127,12 +85,10 @@ app.post("/api/logs", async (c) => {
 
     try {
         const { level = "info", message } = await c.req.json();
-
         await vl.insert(appLogs).values({
             message,
             level,
         });
-
         return c.json({ success: true });
     } catch (err) {
         const message = err instanceof Error ? err.message : String(err);

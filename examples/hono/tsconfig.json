@@ -7,11 +7,19 @@
         "esModuleInterop": true,
         "skipLibCheck": true,
         "outDir": "dist",
+        "baseUrl": ".",
+        "paths": {
+            "@/*": [
+                "./*"
+            ]
+        },
         "types": [
             "@cloudflare/workers-types"
         ]
     },
     "include": [
-        "src"
+        "src",
+        "providers",
+        "scheduler"
     ]
 }

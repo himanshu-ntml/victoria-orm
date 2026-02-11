@@ -10,39 +10,20 @@
 
 import { drizzle } from "drizzle-orm/d1";
 import { isNull, inArray } from "drizzle-orm";
-import { victoriaLogs, stream, text, enm } from "victoria-orm";
-import { emails } from "./db/schema";
-
-// VictoriaLogs email stream schema (matches the D1 fields we archive)
-const emailArchive = stream("email-archive", {
-    id: text("id"),
-    to: text("to").notNull(),
-    from: text("from").notNull(),
-    subject: text("subject").notNull(),
-    status: text("status"),
-    dataSent: text("dataSent"),
-});
+import { emails } from "@/providers/db/schema";
+import { type Bindings, getVL } from "@/providers/victoria";
+import { vlEmails } from "@/providers/victoria/schema";
 
 const BATCH_SIZE = 500;
 
-interface Env {
-    DB: D1Database;
-    VICTORIA_BASE_URL: string;
-    VICTORIA_TOKEN: string;
-}
-
-export async function archiveEmails(env: Env): Promise<{
+export async function archiveEmails(env: Bindings): Promise<{
     archived: number;
     batches: number;
     durationMs: number;
 }> {
     const start = Date.now();
     const db = drizzle(env.DB);
-    const vl = victoriaLogs({
-        url: env.VICTORIA_BASE_URL,
-        token: env.VICTORIA_TOKEN || "",
-        logger: true,
-    });
+    const vl = getVL(env);
 
     // 1. Fetch un-archived emails
     const pending = await db
@@ -69,7 +50,7 @@ export async function archiveEmails(env: Env): Promise<{
         // dataSent stays in D1 only — no need to duplicate it in VictoriaLogs
     }));
 
-    await vl.insert(emailArchive).values(records);
+    await vl.insert(vlEmails).values(records);
     console.log(`[archival] Inserted ${records.length} records into VictoriaLogs`);
 
     // 3. Mark as archived in D1
