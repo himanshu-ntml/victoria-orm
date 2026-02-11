@@ -1,6 +1,6 @@
 {
     "name": "victoria-orm",
-    "version": "0.1.0",
+    "version": "0.1.1",
     "description": "Drizzle-style typed ORM for VictoriaLogs — schema-first queries, typed inserts, and structured logging.",
     "type": "module",
     "main": "./dist/index.cjs",
