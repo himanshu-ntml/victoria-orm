@@ -1,15 +1,10 @@
-# VictoriaLogs Local Development Stack
+# VictoriaLogs Local Development
 #
 # Start:  docker compose up -d
 # Stop:   docker compose down
 #
-# UIs:
-#   VictoriaLogs VMUI:  http://localhost:9428/select/vmui
-#   Grafana:            http://localhost:3000  (admin/admin)
-#
-# API:
-#   Query:  http://localhost:9428/select/logsql/query?query=*
-#   Insert: http://localhost:9428/insert/jsonline
+# UI:     http://localhost:9428/select/vmui
+# API:    http://localhost:9428
 
 services:
   victorialogs:
@@ -25,23 +20,5 @@ services:
       - "-httpListenAddr=:9428"
     restart: unless-stopped
 
-  grafana:
-    image: grafana/grafana:latest
-    container_name: grafana
-    ports:
-      - "3000:3000"
-    environment:
-      - GF_INSTALL_PLUGINS=victoriametrics-logs-datasource
-      - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_AUTH_ANONYMOUS_ENABLED=true
-      - GF_AUTH_ANONYMOUS_ORG_ROLE=Admin
-    volumes:
-      - grafanadata:/var/lib/grafana
-      - ./docker/grafana/datasources:/etc/grafana/provisioning/datasources
-    depends_on:
-      - victorialogs
-    restart: unless-stopped
-
 volumes:
   vldata:
-  grafanadata:
