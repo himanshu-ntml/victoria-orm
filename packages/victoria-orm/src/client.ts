@@ -24,14 +24,8 @@
  *
  *   // PING
  *   const ok = await vl.ping();
- *
- *   // LOG
- *   vl.log.info("Something happened");
  */
 
-import { LogLayer } from "loglayer";
-import { VictoriaLogsTransport } from "@loglayer/transport-victoria-logs";
-import { serializeError } from "serialize-error";
 import { QueryBuilder, type SelectResult, type GroupByResult } from "./builder";
 import type { Stream, StreamFields, InferInsert } from "./schema";
 import { vlGet, vlPost } from "./http";
@@ -44,10 +38,6 @@ export interface VictoriaLogsConfig {
     url: string;
     /** Bearer token for auth (empty string for local/no-auth) */
     token: string;
-    /** Stream fields for structured logging (optional) */
-    streamFields?: () => Record<string, string>;
-    /** Batch size for log sending (default: 100) */
-    batchSize?: number;
     /**
      * Debug hook — fired before every query.
      *
@@ -120,8 +110,6 @@ export class InsertBuilder<TFields extends StreamFields> {
 // ── Main client ──
 
 export interface VictoriaLogsClient extends QueryBuilder {
-    /** Structured logger (loglayer) */
-    log: LogLayer;
     /** Start a typed insert chain */
     insert<TFields extends StreamFields>(
         stream: Stream<TFields>
@@ -171,34 +159,7 @@ export function victoriaLogs(config: VictoriaLogsConfig): VictoriaLogsClient {
         }
     }
 
-    // Logger (loglayer)
-    const log = new LogLayer({
-        errorSerializer: serializeError,
-        transport: new VictoriaLogsTransport({
-            url,
-            headers: token ? { Authorization: `Bearer ${token}` } : {},
-            streamFields:
-                config.streamFields ??
-                (() => ({
-                    service: "victoria-orm",
-                    environment: process.env.NODE_ENV || "development",
-                })),
-            httpParameters: {
-                _time_field: "date",
-                _msg_field: "log.message",
-            },
-            enableBatchSend: true,
-            batchSize: config.batchSize ?? 100,
-            batchSendTimeout: 5000,
-            maxRetries: 3,
-            retryDelay: 1000,
-            onError: (err) => {
-                console.error("[victoria-orm] Send failed:", err);
-            },
-        }),
-    });
-
-    return Object.assign(builder, { log, insert, ping });
+    return Object.assign(builder, { insert, ping });
 }
 
 // Re-export types

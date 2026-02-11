@@ -1,8 +1,6 @@
 # victoria-orm
 
-Drizzle-style typed ORM for [VictoriaLogs](https://victoriametrics.com/products/victorialogs/). Schema-first queries, typed inserts, and structured logging.
-
-No existing npm package provides a query builder for VictoriaLogs — this fills that gap by combining a typed query interface with [loglayer](https://loglayer.dev) for reliable log delivery.
+Drizzle-style typed ORM for [VictoriaLogs](https://victoriametrics.com/products/victorialogs/). Schema-first queries and typed inserts — **zero dependencies**.
 
 ## Install
 
@@ -13,12 +11,12 @@ npm install victoria-orm
 ## Quick Start
 
 ```ts
-import { victoriaLogs, stream, text, enm, eq, contains, and, after } from 'victoria-orm';
+import { victoriaLogs, stream, text, enm, eq, contains, after } from 'victoria-orm';
 
 // 1. Init (like Drizzle)
 const vl = victoriaLogs({
-  url: 'https://your-instance.victoriametrics.com',
-  token: 'your-token',
+  url: 'http://localhost:9428',
+  token: '',  // empty for local, set for cloud
 });
 
 // 2. Define streams (like pgTable)
@@ -92,15 +90,6 @@ await vl.insert(emails).values([
   { to: 'b@c.com', from: 'noreply@app.com', subject: 'Hi', status: 'bounced' },
 ]);
 // → { success: true, count: 2 }
-```
-
-### Structured Logging
-
-Powered by [loglayer](https://loglayer.dev) with batching, retries, and error serialization:
-
-```ts
-vl.log.info('User signed up');
-vl.log.withMetadata({ userId: '123', action: 'payment' }).error('Payment failed');
 ```
 
 ### Raw Queries (escape hatch)
@@ -178,18 +167,6 @@ const users = stream('users', {
 | `.where(eq(users.name, 'Dan'))` | `.where(eq(users.name, 'Dan'))` |
 | `db.insert(users).values({...})` | `vl.insert(users).values({...})` |
 | `text('name')` | `text('name')` |
-
-## Why loglayer?
-
-The ORM uses [@loglayer/transport-victoria-logs](https://www.npmjs.com/package/@loglayer/transport-victoria-logs) internally for sending logs. This gives you:
-
-- **Batching** — groups logs and sends in bulk
-- **Retries** — auto-retries with exponential backoff
-- **Error serialization** — via `serialize-error`
-- **Rate limiting** — respects server rate limits
-- **Structured logging** — `.withMetadata()`, `.withError()`
-
-Without loglayer, you'd need to implement all of this yourself. It's a crucial piece that makes the "send" side production-ready.
 
 ## License
 

@@ -1,7 +1,7 @@
 {
     "name": "victoria-orm",
     "version": "0.1.6",
-    "description": "Drizzle-style typed ORM for VictoriaLogs — schema-first queries, typed inserts, and structured logging.",
+    "description": "Drizzle-style typed ORM for VictoriaLogs — schema-first queries and typed inserts.",
     "type": "module",
     "main": "./dist/index.cjs",
     "module": "./dist/index.js",
@@ -45,11 +45,7 @@
         "url": "https://github.com/himanshu-ntml/victoria-orm.git",
         "directory": "packages/victoria-orm"
     },
-    "dependencies": {
-        "@loglayer/transport-victoria-logs": "^1.0.0",
-        "loglayer": "^8.0.0",
-        "serialize-error": "^13.0.0"
-    },
+    "dependencies": {},
     "devDependencies": {
         "@types/node": "^20.0.0",
         "tsup": "^8.0.0",
