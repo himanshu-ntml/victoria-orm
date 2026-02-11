@@ -1,42 +1,644 @@
+/* ─── VictoriaLogs Dashboard – Global Styles ─── */
+
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap");
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* palette */
+  --bg-base: #0b0e14;
+  --bg-surface: #111620;
+  --bg-elevated: #181e2a;
+  --bg-panel: rgba(22, 28, 40, 0.85);
+  --border: rgba(100, 120, 160, 0.15);
+  --border-focus: rgba(100, 160, 255, 0.4);
+
+  --text-primary: #e2e8f4;
+  --text-secondary: #8b97b0;
+  --text-muted: #5a6478;
+
+  --accent: #4d8ff7;
+  --accent-hover: #6ba3fa;
+  --accent-glow: rgba(77, 143, 247, 0.2);
+
+  --success: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.1);
+  --warn: #fbbf24;
+  --warn-bg: rgba(251, 191, 36, 0.1);
+  --error: #f87171;
+  --error-bg: rgba(248, 113, 113, 0.1);
+  --info: #60a5fa;
+  --info-bg: rgba(96, 165, 250, 0.08);
+  --debug: #a78bfa;
+  --debug-bg: rgba(167, 139, 250, 0.08);
+
+  --radius: 12px;
+  --radius-sm: 8px;
+  --transition: 0.2s ease;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
 }
 
 html,
 body {
-  max-width: 100vw;
-  overflow-x: hidden;
-}
-
-body {
-  color: var(--foreground);
-  background: var(--background);
-  font-family: Arial, Helvetica, sans-serif;
+  height: 100%;
+  background: var(--bg-base);
+  color: var(--text-primary);
+  font-family: "Inter", system-ui, -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
 }
 
-* {
-  box-sizing: border-box;
-  padding: 0;
-  margin: 0;
+/* ─── Header ─── */
+
+.header {
+  padding: 2.5rem 2rem 1.5rem;
+  text-align: center;
 }
 
-a {
-  color: inherit;
-  text-decoration: none;
+.logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
-@media (prefers-color-scheme: dark) {
-  html {
-    color-scheme: dark;
+.logo-icon {
+  font-size: 1.6rem;
+  color: var(--accent);
+  filter: drop-shadow(0 0 8px var(--accent-glow));
+}
+
+.logo h1 {
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  background: linear-gradient(135deg, var(--text-primary), var(--accent));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.subtitle {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+/* ─── Panels ─── */
+
+.panels {
+  display: grid;
+  grid-template-columns: 380px 1fr;
+  gap: 1.5rem;
+  max-width: 1300px;
+  margin: 0 auto;
+  padding: 0 2rem 3rem;
+}
+
+@media (max-width: 900px) {
+  .panels {
+    grid-template-columns: 1fr;
   }
+}
+
+.panel {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  backdrop-filter: blur(20px);
+  overflow: hidden;
+}
+
+.panel-header {
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid var(--border);
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.panel-header h2 {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.panel-icon {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.panel-body {
+  padding: 1.25rem;
+}
+
+/* ─── Form Controls ─── */
+
+.form-group {
+  margin-bottom: 1rem;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.4rem;
+}
+
+.form-group input,
+.form-group select,
+.form-group textarea {
+  width: 100%;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+  transition: border var(--transition), box-shadow var(--transition);
+  outline: none;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+.form-group textarea {
+  resize: vertical;
+  min-height: 72px;
+}
+
+.form-group select {
+  cursor: pointer;
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235a6478'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 0.75rem center;
+  padding-right: 2rem;
+}
+
+/* ─── Buttons ─── */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.6rem 1.2rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition);
+  font-family: "Inter", sans-serif;
+}
+
+.btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.btn-primary {
+  width: 100%;
+  background: linear-gradient(135deg, var(--accent), #3b6fd4);
+  color: #fff;
+  box-shadow: 0 2px 12px var(--accent-glow);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, var(--accent-hover), #4a7fe0);
+  box-shadow: 0 4px 20px var(--accent-glow);
+  transform: translateY(-1px);
+}
+
+.btn-secondary {
+  background: var(--bg-elevated);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+
+.btn-secondary:hover:not(:disabled) {
+  background: var(--bg-surface);
+  border-color: var(--border-focus);
+}
+
+/* ─── Toast Messages ─── */
+
+.toast {
+  margin-top: 0.75rem;
+  padding: 0.6rem 0.85rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.8rem;
+  font-family: "JetBrains Mono", monospace;
+  animation: slideIn 0.25s ease;
+}
+
+.toast-success {
+  background: var(--success-bg);
+  color: var(--success);
+  border: 1px solid rgba(52, 211, 153, 0.2);
+}
+
+.toast-error {
+  background: var(--error-bg);
+  color: var(--error);
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ─── Query Bar ─── */
+
+.query-bar {
+  display: flex;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.query-bar input {
+  flex: 1;
+  padding: 0.65rem 0.85rem;
+  background: var(--bg-base);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  color: var(--text-primary);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.85rem;
+  outline: none;
+  transition: border var(--transition), box-shadow var(--transition);
+}
+
+.query-bar input:focus {
+  border-color: var(--border-focus);
+  box-shadow: 0 0 0 3px var(--accent-glow);
+}
+
+/* ─── Query Example Chips ─── */
+
+.query-examples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.query-examples-label {
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-weight: 600;
+  margin-right: 0.25rem;
+}
+
+.query-chip {
+  padding: 0.25rem 0.6rem;
+  font-size: 0.72rem;
+  font-family: "JetBrains Mono", monospace;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+
+.query-chip:hover {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-focus);
+}
+
+.query-chip-active {
+  background: var(--accent-glow);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+/* ─── Log Viewer ─── */
+
+.log-viewer {
+  min-height: 200px;
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem;
+  color: var(--text-muted);
+}
+
+.empty-icon {
+  font-size: 2.5rem;
+  margin-bottom: 0.75rem;
+  opacity: 0.4;
+}
+
+.empty-state p {
+  font-size: 0.85rem;
+}
+
+.log-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+}
+
+.log-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+
+.log-table thead {
+  background: var(--bg-elevated);
+}
+
+.log-table th {
+  text-align: left;
+  padding: 0.6rem 0.85rem;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  border-bottom: 1px solid var(--border);
+}
+
+.log-table tbody tr {
+  border-bottom: 1px solid var(--border);
+  transition: background var(--transition);
+}
+
+.log-table tbody tr:last-child {
+  border-bottom: none;
+}
+
+.log-table tbody tr:hover {
+  background: rgba(255, 255, 255, 0.02);
+}
+
+.log-table td {
+  padding: 0.55rem 0.85rem;
+  vertical-align: top;
+}
+
+.cell-time {
+  white-space: nowrap;
+  color: var(--text-muted);
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.75rem;
+  min-width: 160px;
+}
+
+.cell-level {
+  white-space: nowrap;
+  min-width: 70px;
+}
+
+.level-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.level-info .level-badge {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.level-warn .level-badge {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.level-error .level-badge {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.level-debug .level-badge {
+  background: var(--debug-bg);
+  color: var(--debug);
+}
+
+.cell-msg {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.8rem;
+  color: var(--text-primary);
+  word-break: break-all;
+}
+
+.log-count {
+  margin-top: 0.75rem;
+  text-align: right;
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+/* ─── Email Table Extras ─── */
+
+.cell-to,
+.cell-subject {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.78rem;
+  color: var(--text-primary);
+}
+
+.cell-to {
+  white-space: nowrap;
+  max-width: 200px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--accent);
+}
+
+.cell-subject {
+  max-width: 320px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cell-id {
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+  white-space: nowrap;
+  cursor: help;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 0.15rem 0.5rem;
+  border-radius: 4px;
+  font-family: "JetBrains Mono", monospace;
+  font-size: 0.7rem;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.status-delivered {
+  background: var(--success-bg);
+  color: var(--success);
+}
+
+.status-bounced {
+  background: var(--error-bg);
+  color: var(--error);
+}
+
+.status-deferred {
+  background: var(--warn-bg);
+  color: var(--warn);
+}
+
+.status-opened {
+  background: var(--info-bg);
+  color: var(--info);
+}
+
+.status-clicked {
+  background: var(--debug-bg);
+  color: var(--debug);
+}
+
+.status-unknown {
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+
+/* ─── Query Examples Spacing ─── */
+
+.query-examples+.query-examples {
+  margin-top: -0.5rem;
+}
+
+/* ─── Count Button ─── */
+
+.btn-stats {
+  background: var(--bg-elevated);
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  padding: 0.6rem 0.9rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition);
+  white-space: nowrap;
+  font-family: "Inter", sans-serif;
+}
+
+.btn-stats:hover:not(:disabled) {
+  background: var(--accent-glow);
+}
+
+.btn-stats:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ─── Stats Display ─── */
+
+.stats-result {
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  animation: slideIn 0.25s ease;
+}
+
+.stats-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+}
+
+.stats-row+.stats-row {
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--border);
+}
+
+.stats-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.stats-key {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.stats-value {
+  font-size: 1.1rem;
+  font-weight: 700;
+  font-family: "JetBrains Mono", monospace;
+  color: var(--accent);
+}
+
+/* ─── Pagination ─── */
+
+.pagination-bar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 0.75rem;
+}
+
+.pagination-controls {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.btn-sm {
+  padding: 0.35rem 0.75rem;
+  font-size: 0.75rem;
+}
+
+/* ─── Layout (remove Next.js defaults) ─── */
+
+.dashboard {
+  min-height: 100vh;
 }

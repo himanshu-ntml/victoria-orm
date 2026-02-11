@@ -1,0 +1,55 @@
+{
+    "name": "victoria-orm",
+    "version": "0.1.0",
+    "description": "Drizzle-style typed ORM for VictoriaLogs — schema-first queries, typed inserts, and structured logging.",
+    "type": "module",
+    "main": "./dist/index.cjs",
+    "module": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "exports": {
+        ".": {
+            "import": {
+                "types": "./dist/index.d.ts",
+                "default": "./dist/index.js"
+            },
+            "require": {
+                "types": "./dist/index.d.cts",
+                "default": "./dist/index.cjs"
+            }
+        }
+    },
+    "files": [
+        "dist",
+        "README.md"
+    ],
+    "scripts": {
+        "build": "tsup",
+        "dev": "tsup --watch",
+        "typecheck": "tsc --noEmit",
+        "prepublishOnly": "npm run build"
+    },
+    "keywords": [
+        "victorialogs",
+        "victoriametrics",
+        "orm",
+        "logs",
+        "query-builder",
+        "typescript",
+        "drizzle-style",
+        "logsql"
+    ],
+    "license": "MIT",
+    "dependencies": {
+        "@loglayer/transport-victoria-logs": "^1.0.0",
+        "loglayer": "^8.0.0",
+        "serialize-error": "^13.0.0"
+    },
+    "devDependencies": {
+        "tsup": "^8.0.0",
+        "typescript": "^5.0.0"
+    },
+    "peerDependencies": {},
+    "engines": {
+        "node": ">=18.0.0"
+    }
+}

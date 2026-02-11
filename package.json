@@ -5,12 +5,17 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "seed": "node scripts/seed.mjs",
+    "seed:large": "node scripts/seed.mjs --count=500",
+    "seed:emails": "node scripts/seed-emails.mjs --count=1000000",
+    "seed:emails:small": "node scripts/seed-emails.mjs --count=10000"
   },
   "dependencies": {
     "next": "16.1.6",
     "react": "19.2.3",
-    "react-dom": "19.2.3"
+    "react-dom": "19.2.3",
+    "victoria-orm": "file:./packages/victoria-orm"
   },
   "devDependencies": {
     "@types/node": "^20",
