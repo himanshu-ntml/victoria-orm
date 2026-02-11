@@ -7,15 +7,17 @@
  * Endpoints:
  *   GET  /                     → health + links
  *   GET  /api/logs?query=*     → query logs
+ *   GET  /api/logs/stats       → log count
  *   GET  /api/emails           → query emails
- *   GET  /api/stats?query=*    → log count
  *   POST /api/logs             → insert a log
+ *   POST /api/emails/archive   → manual archive trigger
  */
 
 import { Hono } from "hono";
-import { archiveEmails } from "@/scheduler/archival";
-import { type Bindings, getVL } from "@/providers/victoria";
-import { vlEmails, appLogs } from "@/providers/victoria/schema";
+import { archiveEmails, cleanupArchived } from "@/scheduler/archival";
+import { type Bindings } from "@/providers/victoria";
+import { logs } from "./features/logs";
+import { emails } from "./features/emails";
 
 // ── App ──
 
@@ -27,98 +29,39 @@ app.get("/", (c) =>
         name: "victoria-orm cloudflare workers example",
         endpoints: [
             "GET  /api/logs?query=*&limit=20",
-            "GET  /api/emails?limit=20",
-            "GET  /api/stats?query=*",
+            "GET  /api/logs/stats?query=*",
+            "GET  /api/logs/emails?limit=20",
             "POST /api/logs  { level, message }",
-            "POST /api/archive  (manual trigger)",
+            "GET  /api/emails?limit=50&archived=false",
+            "GET  /api/emails/:id",
+            "POST /api/emails  { to, from, subject }",
+            "POST /api/emails/archive  (Phase 1: D1 → VictoriaLogs)",
+            "POST /api/emails/cleanup  (Phase 2: verify → hard-delete)",
         ],
     })
 );
 
-// Query logs
-app.get("/api/logs", async (c) => {
-    const vl = getVL(c.env);
-    const query = c.req.query("query") || "log.level:*";
-    const limit = parseInt(c.req.query("limit") || "100", 10);
-    const offset = parseInt(c.req.query("offset") || "0", 10);
-
-    try {
-        const result = await vl.rawQuery(query, { limit, offset });
-        return c.json(result);
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: message }, 500);
-    }
-});
-
-// Query emails (typed — from VictoriaLogs)
-app.get("/api/emails", async (c) => {
-    const vl = getVL(c.env);
-    const limit = parseInt(c.req.query("limit") || "50", 10);
-
-    try {
-        const result = await vl.select().from(vlEmails).limit(limit).execute();
-        return c.json(result);
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: message }, 500);
-    }
-});
-
-// Stats
-app.get("/api/stats", async (c) => {
-    const vl = getVL(c.env);
-    const query = c.req.query("query") || "*";
-
-    try {
-        const count = await vl.rawCount(query);
-        return c.json({ query, count });
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: message }, 500);
-    }
-});
-
-// Insert log
-app.post("/api/logs", async (c) => {
-    const vl = getVL(c.env);
-
-    try {
-        const { level = "info", message } = await c.req.json();
-        await vl.insert(appLogs).values({
-            message,
-            level,
-        });
-        return c.json({ success: true });
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: message }, 500);
-    }
-});
-
-// Manual archive trigger (for testing — same logic as cron)
-app.post("/api/archive", async (c) => {
-    try {
-        const result = await archiveEmails(c.env);
-        return c.json(result);
-    } catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        return c.json({ error: message }, 500);
-    }
-});
+// Feature routes
+app.route("/api/logs", logs);
+app.route("/api/emails", emails);
 
 // ── Exports ──
 
 export default {
     fetch: app.fetch,
 
-    // Cron trigger — runs archival on schedule
+    // Cron trigger — runs both archival phases on schedule
     async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
         ctx.waitUntil(
-            archiveEmails(env).then((result) => {
-                console.log("[scheduled] Archival complete:", result);
-            })
+            (async () => {
+                // Phase 1: Archive un-archived emails to VictoriaLogs
+                const archiveResult = await archiveEmails(env);
+                console.log("[scheduled] Phase 1 (archive):", archiveResult);
+
+                // Phase 2: Verify archived emails in VL, then hard-delete from D1
+                const cleanupResult = await cleanupArchived(env);
+                console.log("[scheduled] Phase 2 (cleanup):", cleanupResult);
+            })()
         );
     },
 };
-
