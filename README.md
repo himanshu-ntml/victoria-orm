@@ -1,36 +1,68 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# victoria-orm
 
-## Getting Started
-
-First, run the development server:
+Drizzle-style typed ORM for [VictoriaLogs](https://victoriametrics.com/products/victorialogs/) — **zero dependencies**.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm install victoria-orm
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+```ts
+import { victoriaLogs, stream, text, enm, eq } from 'victoria-orm';
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+const vl = victoriaLogs({ url: 'http://localhost:9428', token: '', logger: true });
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+const emails = stream('email-archive', {
+  to: text('to').notNull(),
+  status: enm('status', ['delivered', 'bounced']),
+});
 
-## Learn More
+// Query
+const bounced = await vl.select().from(emails)
+  .where(eq(emails.status, 'bounced'))
+  .execute();
 
-To learn more about Next.js, take a look at the following resources:
+// Insert
+await vl.insert(emails).values({ to: 'a@b.com', status: 'delivered' });
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+// Count
+const total = await vl.select().from(emails).count();
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+📖 **Full docs:** [packages/victoria-orm/README.md](packages/victoria-orm/README.md)
 
-## Deploy on Vercel
+## Quick Start (Local)
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+```bash
+# 1. Start VictoriaLogs
+docker compose up -d victorialogs
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+# 2. Seed test data
+node scripts/seed.mjs --count=200
+node scripts/seed-emails.mjs --count=500
+
+# 3. Run an example
+npm run dev:hono     # → http://localhost:3001
+npm run dev:nextjs   # → http://localhost:3000
+```
+
+## Examples
+
+| Example | Dir | Description |
+|---------|-----|-------------|
+| **Next.js** | [examples/nextjs/](examples/nextjs/) | Full-stack app with API routes |
+| **Hono** | [examples/hono/](examples/hono/) | Lightweight API server |
+
+## Project Structure
+
+```
+├── packages/victoria-orm/   ← ORM package (npm: victoria-orm)
+├── examples/
+│   ├── nextjs/              ← Next.js example
+│   └── hono/                ← Hono example
+├── scripts/                 ← Seed scripts
+└── docker-compose.yml       ← Local VictoriaLogs
+```
+
+## License
+
+MIT

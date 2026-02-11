@@ -1,27 +1,18 @@
 {
-  "name": "victoria-logs-poc",
-  "version": "0.1.0",
+  "name": "victoria-orm-monorepo",
   "private": true,
+  "workspaces": [
+    "packages/*",
+    "examples/*"
+  ],
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
+    "build": "npm run build --workspace=packages/victoria-orm",
+    "test": "npm run test --workspace=packages/victoria-orm",
+    "dev:nextjs": "npm run dev --workspace=examples/nextjs",
+    "dev:hono": "npm run dev --workspace=examples/hono",
     "seed": "node scripts/seed.mjs",
     "seed:large": "node scripts/seed.mjs --count=500",
     "seed:emails": "node scripts/seed-emails.mjs --count=1000000",
     "seed:emails:small": "node scripts/seed-emails.mjs --count=10000"
-  },
-  "dependencies": {
-    "next": "16.1.6",
-    "react": "19.2.3",
-    "react-dom": "19.2.3",
-    "victoria-orm": "file:./packages/victoria-orm"
-  },
-  "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^19",
-    "@types/react-dom": "^19",
-    "babel-plugin-react-compiler": "1.0.0",
-    "typescript": "^5"
   }
 }
