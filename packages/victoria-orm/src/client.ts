@@ -39,6 +39,17 @@ export interface VictoriaLogsConfig {
     /** Bearer token for auth (empty string for local/no-auth) */
     token: string;
     /**
+     * Log all queries to console — like Drizzle's `logger: true`.
+     *
+     * @example
+     *   victoriaLogs({ url, token, logger: true })
+     *   // [victoria-orm] 04:32:15 GET /select/logsql/query → stream:"email-archive" (limit: 50)
+     *   // [victoria-orm] ✓ 4832 bytes in 23ms
+     */
+    logger?: boolean;
+    /** Request timeout in ms (default: 10000) */
+    timeout?: number;
+    /**
      * Debug hook — fired before every query.
      *
      * @example
@@ -130,12 +141,14 @@ export interface VictoriaLogsClient extends QueryBuilder {
  */
 export function victoriaLogs(config: VictoriaLogsConfig): VictoriaLogsClient {
     const { url, token } = config;
-    const http: HttpConfig = { baseUrl: url, token };
+    const http: HttpConfig = { baseUrl: url, token, logger: config.logger, timeout: config.timeout };
 
     // Query builder
     const builder = new QueryBuilder({
         baseUrl: url,
         token,
+        logger: config.logger,
+        timeout: config.timeout,
         onQuery: config.onQuery,
     });
 

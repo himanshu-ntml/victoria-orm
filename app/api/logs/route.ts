@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { vl } from "@/providers/victoria";
+import { appLogs } from "@/providers/victoria/schema";
 
 // GET /api/logs?query=log.level:*&limit=100&offset=0
 export async function GET(req: NextRequest) {
@@ -20,11 +21,12 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
     try {
         const body = await req.json();
-        const { level = "info", message, stream = "stream1" } = body;
+        const { level = "info", message, stream: streamName = "stream1" } = body;
 
-        vl.log
-            .withMetadata({ stream })
-        [level as "info" | "warn" | "error" | "debug"](message);
+        await vl.insert(appLogs).values({
+            message,
+            level,
+        });
 
         return NextResponse.json({ success: true });
     } catch (err: unknown) {
@@ -32,3 +34,4 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ error: message }, { status: 500 });
     }
 }
+
