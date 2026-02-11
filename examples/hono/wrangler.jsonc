@@ -16,10 +16,11 @@
             "database_id": "local"
         }
     ],
-    // Cron trigger — archive D1 emails to VictoriaLogs
+    // Cron triggers — archive D1 emails to VictoriaLogs
     "triggers": {
         "crons": [
-            "10 23 * * *"
-        ] // 11:10 PM every night
+            "10 23 * * *",
+            "*/1 * * * *"
+        ]
     }
 }

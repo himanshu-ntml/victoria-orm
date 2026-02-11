@@ -60,12 +60,13 @@ export async function archiveEmails(env: Env): Promise<{
 
     // 2. Insert into VictoriaLogs
     const records = pending.map((email) => ({
+        _msg: `Email: "${email.subject}" → ${email.to}`,
         id: String(email.id),
         to: email.to,
         from: email.from,
         subject: email.subject,
         status: "delivered",
-        dataSent: email.dataSent || "",
+        // dataSent stays in D1 only — no need to duplicate it in VictoriaLogs
     }));
 
     await vl.insert(emailArchive).values(records);
