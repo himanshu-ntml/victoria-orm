@@ -1,9 +1,8 @@
 /**
- * Hono + victoria-orm example
+ * Hono + victoria-orm on Cloudflare Workers
  *
- * Start:
- *   docker compose up -d victorialogs   # from repo root
- *   npm run dev                          # in this directory
+ * Dev:    npm run dev
+ * Deploy: npm run deploy
  *
  * Endpoints:
  *   GET  /                     → health + links
@@ -13,17 +12,15 @@
  *   POST /api/logs             → insert a log
  */
 
-import { serve } from "@hono/node-server";
 import { Hono } from "hono";
 import { victoriaLogs, stream, text, enm, eq } from "victoria-orm";
 
-// ── Init ORM ──
+// ── Types ──
 
-const vl = victoriaLogs({
-    url: process.env.VICTORIA_BASE_URL || "http://localhost:9428",
-    token: process.env.VICTORIA_TOKEN || "",
-    logger: true,
-});
+type Bindings = {
+    VICTORIA_BASE_URL: string;
+    VICTORIA_TOKEN: string;
+};
 
 // ── Schemas ──
 
@@ -48,12 +45,21 @@ const appLogs = stream("stream1", {
 
 // ── App ──
 
-const app = new Hono();
+const app = new Hono<{ Bindings: Bindings }>();
+
+// Helper: init ORM from worker env
+function getVL(env: Bindings) {
+    return victoriaLogs({
+        url: env.VICTORIA_BASE_URL,
+        token: env.VICTORIA_TOKEN || "",
+        logger: true,
+    });
+}
 
 // Health
 app.get("/", (c) =>
     c.json({
-        name: "victoria-orm hono example",
+        name: "victoria-orm cloudflare workers example",
         endpoints: [
             "GET  /api/logs?query=*&limit=20",
             "GET  /api/emails?limit=20",
@@ -65,6 +71,7 @@ app.get("/", (c) =>
 
 // Query logs
 app.get("/api/logs", async (c) => {
+    const vl = getVL(c.env);
     const query = c.req.query("query") || "log.level:*";
     const limit = parseInt(c.req.query("limit") || "100", 10);
     const offset = parseInt(c.req.query("offset") || "0", 10);
@@ -80,6 +87,7 @@ app.get("/api/logs", async (c) => {
 
 // Query emails (typed)
 app.get("/api/emails", async (c) => {
+    const vl = getVL(c.env);
     const limit = parseInt(c.req.query("limit") || "50", 10);
     const status = c.req.query("status");
 
@@ -98,6 +106,7 @@ app.get("/api/emails", async (c) => {
 
 // Stats
 app.get("/api/stats", async (c) => {
+    const vl = getVL(c.env);
     const query = c.req.query("query") || "*";
 
     try {
@@ -111,6 +120,8 @@ app.get("/api/stats", async (c) => {
 
 // Insert log
 app.post("/api/logs", async (c) => {
+    const vl = getVL(c.env);
+
     try {
         const { level = "info", message } = await c.req.json();
 
@@ -126,8 +137,4 @@ app.post("/api/logs", async (c) => {
     }
 });
 
-// ── Start ──
-
-const port = parseInt(process.env.PORT || "3001", 10);
-console.log(`🔥 Hono + victoria-orm listening on http://localhost:${port}`);
-serve({ fetch: app.fetch, port });
+export default app;

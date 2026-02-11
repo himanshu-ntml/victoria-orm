@@ -1,0 +1,11 @@
+{
+    // victoria-orm Cloudflare Workers example
+    "name": "victoria-orm-example-hono",
+    "compatibility_date": "2025-01-01",
+    "main": "src/index.ts",
+    // Environment variables
+    "vars": {
+        "VICTORIA_BASE_URL": "http://localhost:9428",
+        "VICTORIA_TOKEN": ""
+    }
+}
