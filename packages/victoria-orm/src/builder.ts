@@ -18,12 +18,12 @@
 
 import type { Stream, StreamFields, InferStream, Column } from "./schema";
 import type { Filter } from "./operators";
+import { vlGet } from "./http";
+import type { HttpConfig } from "./http";
 
 // ── Config ──
 
-export interface QueryConfig {
-    baseUrl: string;
-    token: string;
+export interface QueryConfig extends HttpConfig {
     /** Optional callback fired before every query — for logging/debugging */
     onQuery?: (logsql: string, kind: "select" | "count" | "groupBy") => void;
 }
@@ -42,6 +42,26 @@ export interface GroupByResult {
     label: string;
     count: number;
     [key: string]: unknown;
+}
+
+// ── Helpers ──
+
+function parseNDJSON<T>(text: string): T[] {
+    return text
+        .trim()
+        .split("\n")
+        .filter(Boolean)
+        .map((line) => {
+            try {
+                return JSON.parse(line) as T;
+            } catch {
+                return { _raw: line } as unknown as T;
+            }
+        });
+}
+
+function parseStatsResponse(text: string): unknown {
+    return JSON.parse(text.trim().split("\n")[0]);
 }
 
 // ── Builder chain ──
@@ -120,34 +140,14 @@ export class StreamQuery<TFields extends StreamFields> {
         const logsql = this.toLogsQL();
         this.config.onQuery?.(logsql, "select");
 
-        const url = new URL(`${this.config.baseUrl}/select/logsql/query`);
-        url.searchParams.set("query", logsql);
-        url.searchParams.set("limit", String(this._limit));
-        if (this._offset > 0) {
-            url.searchParams.set("offset", String(this._offset));
-        }
+        const params: Record<string, string> = {
+            query: logsql,
+            limit: String(this._limit),
+        };
+        if (this._offset > 0) params.offset = String(this._offset);
 
-        const res = await fetch(url.toString(), {
-            headers: { Authorization: `Bearer ${this.config.token}` },
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Query failed (${res.status}): ${text}`);
-        }
-
-        const text = await res.text();
-        const logs = text
-            .trim()
-            .split("\n")
-            .filter(Boolean)
-            .map((line) => {
-                try {
-                    return JSON.parse(line) as InferStream<TFields>;
-                } catch {
-                    return { _raw: line } as unknown as InferStream<TFields>;
-                }
-            });
+        const text = await vlGet(this.config, "/select/logsql/query", params);
+        const logs = parseNDJSON<InferStream<TFields>>(text);
 
         return {
             logs,
@@ -175,26 +175,15 @@ export class StreamQuery<TFields extends StreamFields> {
             const logsql = `${baseQuery} | stats by(${field}) count() as hits`;
             this.config.onQuery?.(logsql, "groupBy");
 
-            const url = new URL(
-                `${this.config.baseUrl}/select/logsql/stats_query`
-            );
-            url.searchParams.set("query", logsql);
-
-            const res = await fetch(url.toString(), {
-                headers: { Authorization: `Bearer ${this.config.token}` },
-            });
-
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(`GroupBy failed (${res.status}): ${text}`);
-            }
-
-            const text = await res.text();
-            const data = JSON.parse(text.trim().split("\n")[0]);
+            const text = await vlGet(this.config, "/select/logsql/stats_query", { query: logsql });
+            const data = parseStatsResponse(text) as {
+                status?: string;
+                data?: { result?: { metric: Record<string, string>; value: [number, string] }[] };
+            };
 
             if (data?.status === "success" && data?.data?.result) {
                 return data.data.result.map(
-                    (r: { metric: Record<string, string>; value: [number, string] }) => ({
+                    (r) => ({
                         label:
                             r.metric[field] ||
                             Object.values(r.metric).join(" "),
@@ -210,22 +199,11 @@ export class StreamQuery<TFields extends StreamFields> {
         const logsql = `${baseQuery} | stats count() as total`;
         this.config.onQuery?.(logsql, "count");
 
-        const url = new URL(
-            `${this.config.baseUrl}/select/logsql/stats_query`
-        );
-        url.searchParams.set("query", logsql);
-
-        const res = await fetch(url.toString(), {
-            headers: { Authorization: `Bearer ${this.config.token}` },
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Count failed (${res.status}): ${text}`);
-        }
-
-        const text = await res.text();
-        const data = JSON.parse(text.trim().split("\n")[0]);
+        const text = await vlGet(this.config, "/select/logsql/stats_query", { query: logsql });
+        const data = parseStatsResponse(text) as {
+            status?: string;
+            data?: { result?: { value: [number, string] }[] };
+        };
 
         if (data?.status === "success" && data?.data?.result?.[0]) {
             return parseInt(data.data.result[0].value[1], 10);
@@ -264,32 +242,14 @@ export class QueryBuilder {
         const offset = opts.offset ?? 0;
         this.config.onQuery?.(logsql, "select");
 
-        const url = new URL(`${this.config.baseUrl}/select/logsql/query`);
-        url.searchParams.set("query", logsql);
-        url.searchParams.set("limit", String(limit));
-        if (offset > 0) url.searchParams.set("offset", String(offset));
+        const params: Record<string, string> = {
+            query: logsql,
+            limit: String(limit),
+        };
+        if (offset > 0) params.offset = String(offset);
 
-        const res = await fetch(url.toString(), {
-            headers: { Authorization: `Bearer ${this.config.token}` },
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Query failed (${res.status}): ${text}`);
-        }
-
-        const text = await res.text();
-        const logs = text
-            .trim()
-            .split("\n")
-            .filter(Boolean)
-            .map((line) => {
-                try {
-                    return JSON.parse(line);
-                } catch {
-                    return { _raw: line };
-                }
-            });
+        const text = await vlGet(this.config, "/select/logsql/query", params);
+        const logs = parseNDJSON<Record<string, unknown>>(text);
 
         return { logs, count: logs.length, hasMore: logs.length === limit, limit, offset };
     }
@@ -299,22 +259,11 @@ export class QueryBuilder {
         const statsQuery = `${logsql} | stats count() as total`;
         this.config.onQuery?.(statsQuery, "count");
 
-        const url = new URL(
-            `${this.config.baseUrl}/select/logsql/stats_query`
-        );
-        url.searchParams.set("query", statsQuery);
-
-        const res = await fetch(url.toString(), {
-            headers: { Authorization: `Bearer ${this.config.token}` },
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Count failed (${res.status}): ${text}`);
-        }
-
-        const text = await res.text();
-        const data = JSON.parse(text.trim().split("\n")[0]);
+        const text = await vlGet(this.config, "/select/logsql/stats_query", { query: statsQuery });
+        const data = parseStatsResponse(text) as {
+            status?: string;
+            data?: { result?: { value: [number, string] }[] };
+        };
 
         if (data?.status === "success" && data?.data?.result?.[0]) {
             return parseInt(data.data.result[0].value[1], 10);

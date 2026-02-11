@@ -34,13 +34,15 @@ import { VictoriaLogsTransport } from "@loglayer/transport-victoria-logs";
 import { serializeError } from "serialize-error";
 import { QueryBuilder, type SelectResult, type GroupByResult } from "./builder";
 import type { Stream, StreamFields, InferInsert } from "./schema";
+import { vlGet, vlPost } from "./http";
+import type { HttpConfig } from "./http";
 
 // ── Config ──
 
 export interface VictoriaLogsConfig {
     /** VictoriaLogs base URL */
     url: string;
-    /** Bearer token for auth */
+    /** Bearer token for auth (empty string for local/no-auth) */
     token: string;
     /** Stream fields for structured logging (optional) */
     streamFields?: () => Record<string, string>;
@@ -59,10 +61,10 @@ export interface VictoriaLogsConfig {
 
 export class InsertBuilder<TFields extends StreamFields> {
     private _stream: Stream<TFields>;
-    private _config: { url: string; token: string };
+    private _http: HttpConfig;
 
-    constructor(config: { url: string; token: string }, stream: Stream<TFields>) {
-        this._config = config;
+    constructor(http: HttpConfig, stream: Stream<TFields>) {
+        this._http = http;
         this._stream = stream;
     }
 
@@ -93,11 +95,6 @@ export class InsertBuilder<TFields extends StreamFields> {
             }
         }
 
-        const url = new URL(`${this._config.url}/insert/jsonline`);
-        url.searchParams.set("_stream_fields", "stream");
-        url.searchParams.set("_time_field", "date");
-        url.searchParams.set("_msg_field", "log.message");
-
         const body = records
             .map((record) => {
                 const { _time, _msg, _stream, ...fields } =
@@ -110,19 +107,11 @@ export class InsertBuilder<TFields extends StreamFields> {
             })
             .join("\n");
 
-        const res = await fetch(url.toString(), {
-            method: "POST",
-            headers: {
-                Authorization: `Bearer ${this._config.token}`,
-                "Content-Type": "application/stream+json",
-            },
-            body,
-        });
-
-        if (!res.ok) {
-            const text = await res.text();
-            throw new Error(`Insert failed (${res.status}): ${text}`);
-        }
+        await vlPost(this._http, "/insert/jsonline", {
+            _stream_fields: "stream",
+            _time_field: "date",
+            _msg_field: "log.message",
+        }, body);
 
         return { success: true, count: records.length };
     }
@@ -153,6 +142,7 @@ export interface VictoriaLogsClient extends QueryBuilder {
  */
 export function victoriaLogs(config: VictoriaLogsConfig): VictoriaLogsClient {
     const { url, token } = config;
+    const http: HttpConfig = { baseUrl: url, token };
 
     // Query builder
     const builder = new QueryBuilder({
@@ -165,21 +155,17 @@ export function victoriaLogs(config: VictoriaLogsConfig): VictoriaLogsClient {
     function insert<TFields extends StreamFields>(
         stream: Stream<TFields>
     ): InsertBuilder<TFields> {
-        return new InsertBuilder<TFields>({ url, token }, stream);
+        return new InsertBuilder<TFields>(http, stream);
     }
 
     // Ping — health check
     async function ping(): Promise<boolean> {
         try {
-            const pingUrl = new URL(`${url}/select/logsql/query`);
-            pingUrl.searchParams.set("query", "log.level:*");
-            pingUrl.searchParams.set("limit", "1");
-
-            const res = await fetch(pingUrl.toString(), {
-                headers: { Authorization: `Bearer ${token}` },
+            await vlGet(http, "/select/logsql/query", {
+                query: "log.level:*",
+                limit: "1",
             });
-
-            return res.ok;
+            return true;
         } catch {
             return false;
         }
@@ -190,7 +176,7 @@ export function victoriaLogs(config: VictoriaLogsConfig): VictoriaLogsClient {
         errorSerializer: serializeError,
         transport: new VictoriaLogsTransport({
             url,
-            headers: { Authorization: `Bearer ${token}` },
+            headers: token ? { Authorization: `Bearer ${token}` } : {},
             streamFields:
                 config.streamFields ??
                 (() => ({
