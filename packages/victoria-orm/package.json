@@ -1,6 +1,6 @@
 {
     "name": "victoria-orm",
-    "version": "0.1.4",
+    "version": "0.1.5",
     "description": "Drizzle-style typed ORM for VictoriaLogs — schema-first queries, typed inserts, and structured logging.",
     "type": "module",
     "main": "./dist/index.cjs",
@@ -39,6 +39,11 @@
         "logsql"
     ],
     "license": "MIT",
+    "repository": {
+        "type": "git",
+        "url": "https://github.com/himanshu-ntml/victoria-orm.git",
+        "directory": "packages/victoria-orm"
+    },
     "dependencies": {
         "@loglayer/transport-victoria-logs": "^1.0.0",
         "loglayer": "^8.0.0",
