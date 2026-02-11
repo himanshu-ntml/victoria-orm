@@ -10,7 +10,8 @@
         "db:generate": "drizzle-kit generate",
         "db:push": "drizzle-kit push",
         "db:migrate:local": "wrangler d1 migrations apply emails-db --local",
-        "db:migrate:remote": "wrangler d1 migrations apply emails-db --remote"
+        "db:migrate:remote": "wrangler d1 migrations apply emails-db --remote",
+        "db:seed": "node scripts/seed-d1.mjs"
     },
     "dependencies": {
         "hono": "^4.0.0",

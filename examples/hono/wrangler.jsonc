@@ -19,7 +19,7 @@
     // Cron trigger — archive D1 emails to VictoriaLogs
     "triggers": {
         "crons": [
-            "0 */6 * * *"
-        ] // every 6 hours
+            "10 23 * * *"
+        ] // 11:10 PM every night
     }
 }
