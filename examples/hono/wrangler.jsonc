@@ -7,5 +7,19 @@
     "vars": {
         "VICTORIA_BASE_URL": "http://localhost:9428",
         "VICTORIA_TOKEN": ""
+    },
+    // D1 database binding
+    "d1_databases": [
+        {
+            "binding": "DB",
+            "database_name": "emails-db",
+            "database_id": "local"
+        }
+    ],
+    // Cron trigger — archive D1 emails to VictoriaLogs
+    "triggers": {
+        "crons": [
+            "0 */6 * * *"
+        ] // every 6 hours
     }
 }

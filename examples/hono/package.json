@@ -5,16 +5,22 @@
     "type": "module",
     "scripts": {
         "dev": "wrangler dev",
-        "deploy": "wrangler deploy",
-        "tail": "wrangler tail"
+        "deploy": "pnpm db:migrate:remote && wrangler deploy",
+        "tail": "wrangler tail",
+        "db:generate": "drizzle-kit generate",
+        "db:push": "drizzle-kit push",
+        "db:migrate:local": "wrangler d1 migrations apply emails-db --local",
+        "db:migrate:remote": "wrangler d1 migrations apply emails-db --remote"
     },
     "dependencies": {
         "hono": "^4.0.0",
+        "drizzle-orm": "^0.44.0",
         "victoria-orm": "file:../../packages/victoria-orm"
     },
     "devDependencies": {
         "@cloudflare/workers-types": "^4.0.0",
-        "wrangler": "^4.64.0",
+        "drizzle-kit": "^0.30.0",
+        "wrangler": "^4.0.0",
         "typescript": "^5.0.0"
     }
 }

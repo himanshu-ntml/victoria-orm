@@ -14,17 +14,19 @@
 
 import { Hono } from "hono";
 import { victoriaLogs, stream, text, enm, eq } from "victoria-orm";
+import { archiveEmails } from "./archival";
 
 // ── Types ──
 
 type Bindings = {
     VICTORIA_BASE_URL: string;
     VICTORIA_TOKEN: string;
+    DB: D1Database;
 };
 
 // ── Schemas ──
 
-const emails = stream("email-archive", {
+const vlEmails = stream("email-archive", {
     id: text("id"),
     to: text("to").notNull(),
     from: text("from").notNull(),
@@ -65,6 +67,7 @@ app.get("/", (c) =>
             "GET  /api/emails?limit=20",
             "GET  /api/stats?query=*",
             "POST /api/logs  { level, message }",
+            "POST /api/archive  (manual trigger)",
         ],
     })
 );
@@ -85,16 +88,16 @@ app.get("/api/logs", async (c) => {
     }
 });
 
-// Query emails (typed)
+// Query emails (typed — from VictoriaLogs)
 app.get("/api/emails", async (c) => {
     const vl = getVL(c.env);
     const limit = parseInt(c.req.query("limit") || "50", 10);
     const status = c.req.query("status");
 
     try {
-        let query = vl.select().from(emails).limit(limit);
+        let query = vl.select().from(vlEmails).limit(limit);
         if (status) {
-            query = query.where(eq(emails.status, status));
+            query = query.where(eq(vlEmails.status, status));
         }
         const result = await query.execute();
         return c.json(result);
@@ -137,4 +140,29 @@ app.post("/api/logs", async (c) => {
     }
 });
 
-export default app;
+// Manual archive trigger (for testing — same logic as cron)
+app.post("/api/archive", async (c) => {
+    try {
+        const result = await archiveEmails(c.env);
+        return c.json(result);
+    } catch (err) {
+        const message = err instanceof Error ? err.message : String(err);
+        return c.json({ error: message }, 500);
+    }
+});
+
+// ── Exports ──
+
+export default {
+    fetch: app.fetch,
+
+    // Cron trigger — runs archival on schedule
+    async scheduled(event: ScheduledEvent, env: Bindings, ctx: ExecutionContext) {
+        ctx.waitUntil(
+            archiveEmails(env).then((result) => {
+                console.log("[scheduled] Archival complete:", result);
+            })
+        );
+    },
+};
+
