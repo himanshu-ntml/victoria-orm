@@ -37,7 +37,11 @@ export interface VictoriaLogsConfig {
     /** VictoriaLogs base URL */
     url: string;
     /** Bearer token for auth (empty string for local/no-auth) */
-    token: string;
+    token?: string;
+    /** HTTP Basic Auth username (used with VictoriaLogs -httpAuth.username) */
+    username?: string;
+    /** HTTP Basic Auth password (used with VictoriaLogs -httpAuth.password) */
+    password?: string;
     /**
      * Log all queries to console — like Drizzle's `logger: true`.
      *
@@ -140,13 +144,15 @@ export interface VictoriaLogsClient extends QueryBuilder {
  *   });
  */
 export function victoriaLogs(config: VictoriaLogsConfig): VictoriaLogsClient {
-    const { url, token } = config;
-    const http: HttpConfig = { baseUrl: url, token, logger: config.logger, timeout: config.timeout };
+    const { url, token = '', username, password } = config;
+    const http: HttpConfig = { baseUrl: url, token, username, password, logger: config.logger, timeout: config.timeout };
 
     // Query builder
     const builder = new QueryBuilder({
         baseUrl: url,
         token,
+        username,
+        password,
         logger: config.logger,
         timeout: config.timeout,
         onQuery: config.onQuery,

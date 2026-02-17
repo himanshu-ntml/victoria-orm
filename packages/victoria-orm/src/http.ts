@@ -7,14 +7,24 @@
 export interface HttpConfig {
     baseUrl: string;
     token: string;
+    /** HTTP Basic Auth username (used with VictoriaLogs -httpAuth.username) */
+    username?: string;
+    /** HTTP Basic Auth password (used with VictoriaLogs -httpAuth.password) */
+    password?: string;
     /** Request timeout in ms (default: 10000) */
     timeout?: number;
     /** Log requests to console like Drizzle's logger */
     logger?: boolean;
 }
 
-function authHeaders(token: string): Record<string, string> {
-    return token ? { Authorization: `Bearer ${token}` } : {};
+function authHeaders(config: HttpConfig): Record<string, string> {
+    // Basic auth takes priority (matches VictoriaLogs -httpAuth.username/password)
+    if (config.username) {
+        const credentials = btoa(`${config.username}:${config.password || ''}`);
+        return { Authorization: `Basic ${credentials}` };
+    }
+    // Fall back to Bearer token
+    return config.token ? { Authorization: `Bearer ${config.token}` } : {};
 }
 
 function logRequest(config: HttpConfig, method: string, path: string, params: Record<string, string>): void {
@@ -63,7 +73,7 @@ export async function vlGet(
 
     try {
         const res = await fetch(url.toString(), {
-            headers: authHeaders(config.token),
+            headers: authHeaders(config),
             signal: AbortSignal.timeout(config.timeout ?? 10_000),
         });
 
@@ -113,7 +123,7 @@ export async function vlPost(
         const res = await fetch(url.toString(), {
             method: "POST",
             headers: {
-                ...authHeaders(config.token),
+                ...authHeaders(config),
                 "Content-Type": "application/stream+json",
             },
             body,
