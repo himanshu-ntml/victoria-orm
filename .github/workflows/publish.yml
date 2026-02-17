@@ -21,16 +21,13 @@ jobs:
           registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
-        working-directory: packages/victoria-orm
         run: npm install
 
       - name: Test
-        working-directory: packages/victoria-orm
-        run: npm test
+        run: npm test --workspace=packages/victoria-orm
 
       - name: Build
-        working-directory: packages/victoria-orm
-        run: npm run build
+        run: npm run build --workspace=packages/victoria-orm
 
       - name: Type check
         working-directory: packages/victoria-orm
