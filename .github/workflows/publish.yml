@@ -22,7 +22,7 @@ jobs:
 
       - name: Install dependencies
         working-directory: packages/victoria-orm
-        run: npm ci
+        run: npm install
 
       - name: Test
         working-directory: packages/victoria-orm
