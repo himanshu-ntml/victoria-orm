@@ -112,8 +112,7 @@ export class InsertBuilder<TFields extends StreamFields> {
             })
             .join("\n");
 
-        await vlPost(this._http, "/insert/jsonline", {
-            _stream_fields: "stream",
+        await vlPost(this._http, "/insert/jsonline?_stream_fields=stream", {
             _time_field: "date",
             _msg_field: "log.message",
         }, body);
