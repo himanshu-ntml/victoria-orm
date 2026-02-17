@@ -107,6 +107,7 @@ export class InsertBuilder<TFields extends StreamFields> {
                 return JSON.stringify({
                     stream: this._stream.streamName,
                     date: (_time as string) || new Date().toISOString(),
+                    _msg: (_msg as string) || "",
                     ...fields,
                 });
             })
@@ -114,6 +115,7 @@ export class InsertBuilder<TFields extends StreamFields> {
 
         await vlPost(this._http, "/insert/jsonline?_stream_fields=stream", {
             _time_field: "date",
+            _msg_field: "_msg",
         }, body);
 
         return { success: true, count: records.length };
