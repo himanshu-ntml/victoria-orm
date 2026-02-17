@@ -16,7 +16,8 @@ import { victoriaLogs, stream, text, enm, eq, contains, after } from 'victoria-o
 // 1. Init (like Drizzle)
 const vl = victoriaLogs({
   url: 'http://localhost:9428',
-  token: '',  // empty for local, set for cloud
+  username: 'admin',     // HTTP Basic Auth
+  password: 'changeme',
 });
 
 // 2. Define streams (like pgTable)
@@ -34,6 +35,30 @@ const bounced = await vl.select().from(emails)
   .limit(50)
   .execute();
 ```
+
+## Authentication
+
+victoria-orm supports **Basic Auth**, **Bearer tokens**, or **no auth**:
+
+```ts
+// Basic Auth — matches VictoriaLogs -httpAuth.username / -httpAuth.password flags
+const vl = victoriaLogs({
+  url: 'http://localhost:9428',
+  username: 'admin',
+  password: 'changeme',
+});
+
+// Bearer token — for cloud / reverse-proxy setups
+const vl = victoriaLogs({
+  url: 'https://logs.example.com',
+  token: 'my-bearer-token',
+});
+
+// No auth — local development
+const vl = victoriaLogs({ url: 'http://localhost:9428' });
+```
+
+> Basic Auth takes priority when both `username` and `token` are provided.
 
 ## API
 
@@ -161,7 +186,7 @@ const users = stream('users', {
 
 | Drizzle ORM | victoria-orm |
 |-------------|-------------|
-| `drizzle(env.DB)` | `victoriaLogs({ url, token })` |
+| `drizzle(env.DB)` | `victoriaLogs({ url, username, password })` |
 | `pgTable('users', {...})` | `stream('users', {...})` |
 | `db.select().from(users)` | `vl.select().from(users)` |
 | `.where(eq(users.name, 'Dan'))` | `.where(eq(users.name, 'Dan'))` |
